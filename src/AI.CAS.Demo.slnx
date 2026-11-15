@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AI.CAS.Demo.Test/AI.CAS.Demo.Test.csproj" />
+  <Project Path="AI.CAS.Demo/AI.CAS.Demo.csproj" />
+</Solution>

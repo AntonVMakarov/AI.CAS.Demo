@@ -8,4 +8,8 @@
     <UseVSTest>true</UseVSTest>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\AI.CAS.Demo\AI.CAS.Demo.csproj" />
+  </ItemGroup>
+
 </Project>

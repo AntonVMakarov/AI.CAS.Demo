@@ -14,12 +14,6 @@ namespace AI.CAS.Core.Assumptions;
 /// Его роль состоит только в том, чтобы передать движку один валидный ключ математического утверждения. Движок может затем
 /// найти точный факт, применить поставщики литералов, доменную решетку, граф импликаций или алгебраические правила.
 /// </para>
-/// <para>
-/// Свойства <see cref="Subject"/>, <see cref="Predicate"/>, <see cref="ComparedTo"/>, <see cref="Domain"/> и
-/// <see cref="Interval"/> оставлены как совместимый доступ только для чтения к полям атома. Новый код должен
-/// предпочитать <see cref="Atom"/>, потому что именно атом является единственным общим представлением утверждения
-/// без истинностного значения.
-/// </para>
 /// </remarks>
 public sealed record AssumptionQuery
 {
@@ -84,40 +78,4 @@ public sealed record AssumptionQuery
     /// сравнивали одну и ту же модель утверждения.
     /// </summary>
     public AssumptionAtom Atom { get; }
-
-
-    /// <summary>
-    /// Возвращает выражение, для которого выполняется запрос.
-    /// Свойство является совместимым представлением <see cref="AssumptionAtom.Subject"/> только для чтения.
-    /// </summary>
-    public AstNode Subject => Atom.Subject;
-
-
-    /// <summary>
-    /// Возвращает вид проверяемого предиката.
-    /// Свойство является совместимым представлением <see cref="AssumptionAtom.Predicate"/> только для чтения.
-    /// </summary>
-    public AssumptionPredicateKind Predicate => Atom.Predicate;
-
-
-    /// <summary>
-    /// Возвращает второе выражение для бинарного предиката, если оно было задано.
-    /// Свойство является совместимым представлением <see cref="AssumptionAtom.ComparedTo"/> только для чтения.
-    /// </summary>
-    public AstNode? ComparedTo => Atom.ComparedTo;
-
-
-    /// <summary>
-    /// Возвращает область, относительно которой формулируется запрос, если она была задана.
-    /// Свойство является совместимым представлением <see cref="AssumptionAtom.Domain"/> только для чтения.
-    /// </summary>
-    public IDomain? Domain => Atom.Domain;
-
-
-    /// <summary>
-    /// Возвращает типизированный интервал запроса, если запрос проверяет интервальную принадлежность.
-    /// Это свойство существует для совместимого доступа к <see cref="AssumptionAtom.Interval"/> и не является
-    /// отдельным строковым представлением условия.
-    /// </summary>
-    public ScalarInterval? Interval => Atom.Interval;
 }

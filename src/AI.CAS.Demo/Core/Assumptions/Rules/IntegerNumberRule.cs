@@ -46,17 +46,23 @@ internal sealed class IntegerNumberRule : IAssumptionRule
                 return (!number.Integer.IsZero) ? AssumptionTruthValue.True : AssumptionTruthValue.False;
             }
 
-            // у нас целое не положительное (т.е. отрицательное или нуль) число: 
+            // у нас целое неположительное (т.е. отрицательное или нуль) число: 
             if(query.Atom.Predicate == AssumptionPredicateKind.NonPositive)
             {
                 return ((number.Integer.Sign < 0) || (number.Integer == 0)) ? AssumptionTruthValue.True : AssumptionTruthValue.False;
             }
 
-            // у нас целое не отрицательное (т.е. положительное или нуль) число:
+            // у нас целое неотрицательное (т.е. положительное или нуль) число:
             if(query.Atom.Predicate == AssumptionPredicateKind.NonNegative)
             {
                 return ((number.Integer.Sign > 0) || (number.Integer == 0)) ? AssumptionTruthValue.True : AssumptionTruthValue.False;
             }
+
+            // у нас конечное число:
+            if (query.Atom.Predicate == AssumptionPredicateKind.Finite) return AssumptionTruthValue.True;
+
+            // у нас не конечное число:
+            if (query.Atom.Predicate == AssumptionPredicateKind.NonFinite) return AssumptionTruthValue.False;
 
             // у нас целое число:
             if (query.Atom.Predicate == AssumptionPredicateKind.Integer) return AssumptionTruthValue.True;

@@ -23,7 +23,7 @@ public sealed record AssumptionAnswer(AssumptionTruthValue TruthValue, Assumptio
     }
 
 
-    public static AssumptionAnswer NoEvidence(AssumptionTruthValue truthValue) 
+    public static AssumptionAnswer NoEvidence() 
     {
         return new AssumptionAnswer(AssumptionTruthValue.Unknown, AssumptionAnswerKind.NoEvidence);
     }

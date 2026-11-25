@@ -44,14 +44,19 @@ internal sealed class AssumptionResultResolver
 
         if (hasConflict || (hasTrue && hasFalse))
         {
-            return AssumptionAnswer.Conflict();
+            return AssumptionAnswer.Conflict(
+                results.Select(r => r.RuleId).ToArray()
+                );
         }
 
         if (hasTrue || hasFalse)
         {
-            return AssumptionAnswer.Proved(hasTrue ? AssumptionTruthValue.True : AssumptionTruthValue.False);
+            return AssumptionAnswer.Proved(
+                hasTrue ? AssumptionTruthValue.True : AssumptionTruthValue.False,
+                results.Select(r => r.RuleId).ToArray()
+                );
         }
 
-        return hasInconclusive ? AssumptionAnswer.Inconclusive() : AssumptionAnswer.NoEvidence();
+        return hasInconclusive ? AssumptionAnswer.Inconclusive(results.Select(r => r.RuleId).ToArray()) : AssumptionAnswer.NoEvidence();
     }
 }

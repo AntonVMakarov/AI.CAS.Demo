@@ -1,4 +1,6 @@
-﻿namespace AI.CAS.Core.Assumptions;
+﻿using System.Collections.ObjectModel;
+
+namespace AI.CAS.Core.Assumptions;
 
 /// <summary>
 /// Представляет публичный объяснимый ответ механизма предположений.
@@ -19,18 +21,25 @@ public sealed record AssumptionAnswer
 
 
     /// <summary>
+    /// Список правил, которые предоставили доказательства.
+    /// </summary>
+    public IReadOnlyList<string> RuleIds { get; }
+
+
+    /// <summary>
     /// Закрытый конструктор с параметрами.
     /// </summary>
     /// <param name="truthValue">Трехзначный ответ</param>
     /// <param name="kind">Более точная причина ответа</param>
-    private AssumptionAnswer(AssumptionTruthValue truthValue, AssumptionAnswerKind kind)
+    private AssumptionAnswer(AssumptionTruthValue truthValue, AssumptionAnswerKind kind, IReadOnlyList<string> ruleIds)
     {
         TruthValue = truthValue;
         Kind = kind;
+        RuleIds = CopyRuleIds(ruleIds);
     }
 
 
-    public static AssumptionAnswer Proved(AssumptionTruthValue truthValue)
+    public static AssumptionAnswer Proved(AssumptionTruthValue truthValue, IReadOnlyList<string> rulesIds)
     {
         if (truthValue is not AssumptionTruthValue.True and not AssumptionTruthValue.False)
         {
@@ -38,15 +47,52 @@ public sealed record AssumptionAnswer
             throw new ArgumentOutOfRangeException(nameof(truthValue));
         }
 
-        return new AssumptionAnswer(truthValue, AssumptionAnswerKind.Proved);
+        return new AssumptionAnswer(truthValue, AssumptionAnswerKind.Proved, rulesIds);
     }
 
 
-    public static AssumptionAnswer NoEvidence() => new AssumptionAnswer(AssumptionTruthValue.Unknown, AssumptionAnswerKind.NoEvidence);
+    public static AssumptionAnswer NoEvidence() => new AssumptionAnswer(AssumptionTruthValue.Unknown, AssumptionAnswerKind.NoEvidence, Array.Empty<string>());
 
 
-    public static AssumptionAnswer Inconclusive() => new AssumptionAnswer(AssumptionTruthValue.Unknown, AssumptionAnswerKind.Inconclusive);
+    public static AssumptionAnswer Inconclusive(IReadOnlyList<string> ruleIds) => new AssumptionAnswer(AssumptionTruthValue.Unknown, AssumptionAnswerKind.Inconclusive, ruleIds);
 
 
-    public static AssumptionAnswer Conflict() => new AssumptionAnswer(AssumptionTruthValue.Unknown, AssumptionAnswerKind.Conflict);
+    public static AssumptionAnswer Conflict(IReadOnlyList<string> ruleIds) => new AssumptionAnswer(AssumptionTruthValue.Unknown, AssumptionAnswerKind.Conflict, ruleIds);
+
+
+    /// <summary>
+    /// Создает защищенный снимок уникальных идентификаторов правил, которые предоставили доказательства.
+    /// </summary>
+    /// <param name="ruleIds">
+    /// Исходный список уникальных идентификаторов правил, которые предоставили доказательства.
+    /// Исходная последовательность правил.
+    /// </param>
+    /// <returns>
+    /// Неизменяемый список правил.
+    /// </returns>
+    private static IReadOnlyList<string> CopyRuleIds(IReadOnlyList<string> ruleIds)
+    {
+        ArgumentNullException.ThrowIfNull(ruleIds);
+
+        if (ruleIds.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        List<string> copiedRuleIds = new List<string>(ruleIds.Count);
+
+        foreach (string? ruleId in ruleIds)
+        {
+            if (ruleId is null)
+            {
+                throw new ArgumentException(
+                    "Ответ предположений не должен содержать отсутствующее правило.",
+                    nameof(ruleIds));
+            }
+
+            copiedRuleIds.Add(ruleId);
+        }
+
+        return new ReadOnlyCollection<string>(copiedRuleIds);
+    }
 }

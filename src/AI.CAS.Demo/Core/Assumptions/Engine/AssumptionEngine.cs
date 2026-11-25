@@ -24,7 +24,13 @@ public sealed class AssumptionEngine : IAssumptionEngine
     /// Список правил (знаний) для работы механизма предположений.
     /// </summary>
     private readonly IReadOnlyList<IAssumptionRule> _rules;
-    
+
+
+    /// <summary>
+    /// Резолвер для обработки результатов, полученных от применения правил знания.
+    /// </summary>
+    private readonly AssumptionResultResolver _resolver;
+
 
     /// <summary>
     /// Создает механизм предположений с правилами (знаниями) по умолчанию.
@@ -49,23 +55,25 @@ public sealed class AssumptionEngine : IAssumptionEngine
     /// <exception cref="ArgumentException">
     /// Возникает, если список правил (знаний) содержит отсутствующий элемент.
     /// </exception>
-    internal AssumptionEngine(IReadOnlyList<IAssumptionRule> rules)
+    private AssumptionEngine(DefaultAssumptionEngineConfiguration configuration)
     {
-        ArgumentNullException.ThrowIfNull(rules);
+        ArgumentNullException.ThrowIfNull(configuration.Rules);
+        ArgumentNullException.ThrowIfNull(configuration.Resolver);
 
-        List<IAssumptionRule> copiedRules = new List<IAssumptionRule>(rules.Count);
+        List<IAssumptionRule> copiedRules = new List<IAssumptionRule>(configuration.Rules.Count);
 
-        foreach (IAssumptionRule? rule in rules)
+        foreach (IAssumptionRule? rule in configuration.Rules)
         {
             if (rule is null)
             {
-                throw new ArgumentException("Пайплайн предположений не должен содержать отсутствующее правило.", nameof(rules));
+                throw new ArgumentException("Пайплайн предположений не должен содержать отсутствующее правило.", nameof(configuration.Rules));
             }
 
             copiedRules.Add(rule);
         }
 
         _rules = new ReadOnlyCollection<IAssumptionRule>(copiedRules);
+        _resolver = configuration.Resolver;
     }
 
 
@@ -90,14 +98,47 @@ public sealed class AssumptionEngine : IAssumptionEngine
     /// </exception>
     public AssumptionTruthValue Evaluate(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null)
     {
-        // Проверяем токен отмены:
-        ct?.ThrowIfCancellationRequested();
+        return Explain(query, assumptions, ct).TruthValue;
+    }
 
+
+    /// <summary>
+    /// Оценивает запрос и возвращает объяснимый ответ.
+    /// Метод является единственным вычислительным путем. Метод <see cref="Evaluate"/> берет публичную истинность 
+    /// из результата Explain. Это защищает обратную совместимость от расхождения: если будущие правила знаний изменят 
+    /// причину ответа, старый и новый API все равно увидят один и тот же согласованный результат.
+    ///
+    /// Важно, что <c>NoAnswer</c> и <c>Inconclusive</c> не смешиваются. Первый результат означает неприменимость
+    /// источника, второй — реальную безопасную неопределенность применимого источника.
+    /// </summary>
+    /// <param name="query">
+    /// Запрос к движку предположений.
+    /// </param>
+    /// <param name="assumptions">
+    /// Набор явно известных фактов. Если дополнительных фактов нет, вызывающий код должен передать
+    /// <see cref="AssumptionSet.Empty"/>, а не <c>null</c>.
+    /// </param>
+    /// <param name="ct">
+    /// Необязательный токен отмены. Его проверяют перед пайплайном и перед каждым правилом, а
+    /// сами правила дополнительно проверяют его внутри собственных циклов.
+    /// </param>
+    /// <returns>
+    /// Объяснимый ответ: публичная истинность, причина, набор уникальных идентификаторов правил, участвующих в 
+    /// доказательстве.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Возникает, если query или assumptions равны null.
+    /// </exception>
+    public AssumptionAnswer Explain(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null)
+    {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(assumptions);
 
-        // Пока мы ничего не знаем:
-        AssumptionTruthValue answer = AssumptionTruthValue.Unknown;
+        // Проверяем токен отмены:
+        ct?.ThrowIfCancellationRequested();
+
+        // Список результатов применения правил:
+        List<AssumptionRuleResult> results = new List<AssumptionRuleResult>();
 
         // Теперь пробуем применить каждое правило:
         foreach (IAssumptionRule rule in _rules)
@@ -105,18 +146,15 @@ public sealed class AssumptionEngine : IAssumptionEngine
             // Проверяем токен отмены:
             ct?.ThrowIfCancellationRequested();
 
-            // Пробуем применить правило:
-            answer = rule.Evaluate(query, assumptions, this, ct);
-
-            // Если правило смогло доказать истинность или ложность утверждения, тогда
-            // сразу возвращаем результат:
-            if (answer != AssumptionTruthValue.Unknown) return answer;
+            // Добавляем результат применения правила в список:
+            results.Add(
+                rule.Evaluate(query, assumptions, ct));
         }
 
-        // Возвращаем результат:
-        return answer;
+        // Отдаём результаты применения правил резолверу:
+        return _resolver.Resolve(results);
     }
-  
+
 
     /// <summary>
     /// Создает стандартный порядок поставщиков для консервативного фасада.
@@ -124,8 +162,11 @@ public sealed class AssumptionEngine : IAssumptionEngine
     /// <returns>
     /// Упорядоченный список поставщиков предположений по умолчанию.
     /// </returns>
-    private static IReadOnlyList<IAssumptionRule> CreateDefaultConfiguration()
+    private static DefaultAssumptionEngineConfiguration CreateDefaultConfiguration()
     {
+        // Резолвер результатов правил
+        AssumptionResultResolver resolver = new AssumptionResultResolver();
+
         // Правило для ответа на запросы только по точным явно сохраненным фактам:
         ExplicitFactRule explicitRule = new ExplicitFactRule();
 
@@ -141,6 +182,20 @@ public sealed class AssumptionEngine : IAssumptionEngine
         ];
 
         // Возвращаем список правил:
-        return rules;
+        return new DefaultAssumptionEngineConfiguration(rules, resolver);
     }
+
+
+    /// <summary>
+    /// Хранит стандартную конфигурацию на основе правил и резолвера.
+    /// Запись нужна только для композиции конструктора по умолчанию. Ее единственная задача — передать в основной 
+    /// конструктор уже согласованные экземпляры поставщиков и общий согласователь.
+    /// </summary>
+    /// <param name="Rules">
+    /// Полный список правил механизма предположений.
+    /// </param>
+    /// <param name="Resolver">
+    /// Согласователь результатов поставщиков.
+    /// </param>
+    private sealed record DefaultAssumptionEngineConfiguration(IReadOnlyList<IAssumptionRule> Rules, AssumptionResultResolver Resolver);
 }

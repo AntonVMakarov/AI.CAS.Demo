@@ -1,4 +1,4 @@
-﻿using AI.CAS.Core.Assumptions;
+﻿namespace AI.CAS.Core.Assumptions;
 
 internal sealed class AssumptionResultResolver
 {
@@ -14,7 +14,7 @@ internal sealed class AssumptionResultResolver
     /// <exception cref="ArgumentNullException">
     /// Возникает, если последовательность результатов отсутствует.
     /// </exception>
-    public AssumptionAnswer Resolve(IEnumerable<AssumptionRuleResult> results)
+    public AssumptionAnswer Resolve(IReadOnlyList<AssumptionRuleResult> results)
     {
         ArgumentNullException.ThrowIfNull(results);
 
@@ -45,7 +45,11 @@ internal sealed class AssumptionResultResolver
         if (hasConflict || (hasTrue && hasFalse))
         {
             return AssumptionAnswer.Conflict(
-                results.Select(r => r.RuleId).ToArray()
+                results
+                    .Where(r => r.Kind == AssumptionRuleResultKind.Conflict)
+                    .Select(r => r.RuleId)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray()
                 );
         }
 
@@ -53,10 +57,21 @@ internal sealed class AssumptionResultResolver
         {
             return AssumptionAnswer.Proved(
                 hasTrue ? AssumptionTruthValue.True : AssumptionTruthValue.False,
-                results.Select(r => r.RuleId).ToArray()
-                );
+                results
+                    .Where(r => r.Kind == AssumptionRuleResultKind.Proved)
+                    .Select(r => r.RuleId)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray()
+                    );
         }
 
-        return hasInconclusive ? AssumptionAnswer.Inconclusive(results.Select(r => r.RuleId).ToArray()) : AssumptionAnswer.NoEvidence();
+        return 
+            hasInconclusive ? 
+            AssumptionAnswer.Inconclusive(
+                results
+                    .Where(r => r.Kind == AssumptionRuleResultKind.Inconclusive)
+                    .Select(r => r.RuleId)
+                    .Distinct(StringComparer.Ordinal).ToArray()) : 
+            AssumptionAnswer.NoEvidence();
     }
 }

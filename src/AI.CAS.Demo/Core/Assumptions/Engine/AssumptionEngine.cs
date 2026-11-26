@@ -37,7 +37,7 @@ public sealed class AssumptionEngine : IAssumptionEngine
     /// Порядок правил фиксируется в одном месте, чтобы в будущем можно было добавлять новые источники
     /// знания без разрастания фасада и без изменения публичного контракта <see cref="IAssumptionEngine"/>.
     /// </summary>
-    public AssumptionEngine() : this(CreateDefaultConfiguration())
+    public AssumptionEngine() : this(CreateDefaultRules())
     {
     }
 
@@ -55,25 +55,24 @@ public sealed class AssumptionEngine : IAssumptionEngine
     /// <exception cref="ArgumentException">
     /// Возникает, если список правил (знаний) содержит отсутствующий элемент.
     /// </exception>
-    private AssumptionEngine(DefaultAssumptionEngineConfiguration configuration)
+    private AssumptionEngine(IReadOnlyList<IAssumptionRule> rules)
     {
-        ArgumentNullException.ThrowIfNull(configuration.Rules);
-        ArgumentNullException.ThrowIfNull(configuration.Resolver);
+        ArgumentNullException.ThrowIfNull(rules);
 
-        List<IAssumptionRule> copiedRules = new List<IAssumptionRule>(configuration.Rules.Count);
+        List<IAssumptionRule> copiedRules = new List<IAssumptionRule>(rules.Count);
 
-        foreach (IAssumptionRule? rule in configuration.Rules)
+        foreach (IAssumptionRule? rule in rules)
         {
             if (rule is null)
             {
-                throw new ArgumentException("Пайплайн предположений не должен содержать отсутствующее правило.", nameof(configuration.Rules));
+                throw new ArgumentException("Пайплайн предположений не должен содержать отсутствующее правило.", nameof(rules));
             }
 
             copiedRules.Add(rule);
         }
 
         _rules = new ReadOnlyCollection<IAssumptionRule>(copiedRules);
-        _resolver = configuration.Resolver;
+        _resolver = new AssumptionResultResolver();
     }
 
 
@@ -162,7 +161,7 @@ public sealed class AssumptionEngine : IAssumptionEngine
     /// <returns>
     /// Упорядоченный список поставщиков предположений по умолчанию.
     /// </returns>
-    private static DefaultAssumptionEngineConfiguration CreateDefaultConfiguration()
+    private static IReadOnlyList<IAssumptionRule> CreateDefaultRules()
     {
         // Резолвер результатов правил
         AssumptionResultResolver resolver = new AssumptionResultResolver();
@@ -182,20 +181,6 @@ public sealed class AssumptionEngine : IAssumptionEngine
         ];
 
         // Возвращаем список правил:
-        return new DefaultAssumptionEngineConfiguration(rules, resolver);
+        return rules;
     }
-
-
-    /// <summary>
-    /// Хранит стандартную конфигурацию на основе правил и резолвера.
-    /// Запись нужна только для композиции конструктора по умолчанию. Ее единственная задача — передать в основной 
-    /// конструктор уже согласованные экземпляры поставщиков и общий согласователь.
-    /// </summary>
-    /// <param name="Rules">
-    /// Полный список правил механизма предположений.
-    /// </param>
-    /// <param name="Resolver">
-    /// Согласователь результатов поставщиков.
-    /// </param>
-    private sealed record DefaultAssumptionEngineConfiguration(IReadOnlyList<IAssumptionRule> Rules, AssumptionResultResolver Resolver);
 }

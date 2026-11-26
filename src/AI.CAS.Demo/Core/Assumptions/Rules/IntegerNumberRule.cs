@@ -102,6 +102,6 @@ internal sealed class IntegerNumberRule : IAssumptionRule
         }
 
         // Тут - ответ не знаю:
-        return AssumptionRuleResult.Proved(AssumptionTruthValue.Unknown, RuleId);
+        return AssumptionRuleResult.NoAnswer(RuleId);
     }
 }

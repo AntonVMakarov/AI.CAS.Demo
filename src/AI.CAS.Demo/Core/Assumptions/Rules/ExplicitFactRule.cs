@@ -11,7 +11,7 @@ internal sealed class ExplicitFactRule : IAssumptionRule
     /// <summary>
     /// Уникальный идентификатор правила.
     /// </summary>
-    public override string RuleId => "explicit.fact.rule";
+    public string RuleId => "explicit.fact.rule";
 
 
     /// <summary>
@@ -30,7 +30,7 @@ internal sealed class ExplicitFactRule : IAssumptionRule
     /// <returns>
     /// Определенный ответ для согласованных точных фактов, <c>Uknown</c> в противополжном случае.
     /// </returns>    
-    public override AssumptionRuleResult Evaluate(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null)
+    public AssumptionRuleResult Evaluate(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(assumptions);
@@ -38,8 +38,6 @@ internal sealed class ExplicitFactRule : IAssumptionRule
         bool hasUnknownFacts = false;
         bool hasTrueFacts = false;
         bool hasFalseFacts = false;
-        bool hasMatchingFacts = false;
-
 
         // Проходим по списку фактов:
         foreach (AssumptionFact fact in assumptions.Facts)
@@ -55,25 +53,15 @@ internal sealed class ExplicitFactRule : IAssumptionRule
                 {
                     case AssumptionTruthValue.True:
                         hasTrueFacts = true;
-                        hasMatchingFacts = true;
                         break;
                     case AssumptionTruthValue.False:
                         hasFalseFacts = true;
-                        hasMatchingFacts = true;
                         break;
                     case AssumptionTruthValue.Unknown:
                         hasUnknownFacts = true;
-                        hasMatchingFacts = true;
                         break;
                 }
             }
-        }
-
-        // Теперь анализируем результат:
-        // Если у нас просто нет никаких фактов, совпадающих с условиями нашего запроса:
-        if(!hasMatchingFacts)
-        {
-            return AssumptionRuleResult.NoAnswer(RuleId);
         }
 
         // Если у нас противоречие:
@@ -103,8 +91,7 @@ internal sealed class ExplicitFactRule : IAssumptionRule
             return AssumptionRuleResult.Inconclusive(RuleId);
         }
 
-        // Если мы не нашли подходящих фактов:
-        // Мы сюда никогда не должны попасть:
-        throw new NotSupportedException("Мы попали в область, когда ни одно условие не сработало.");
+        // Если мы сюда попали, то вообще у нас нет никаких фактов, поэтому:
+        return AssumptionRuleResult.NoAnswer(RuleId);
     }
 }

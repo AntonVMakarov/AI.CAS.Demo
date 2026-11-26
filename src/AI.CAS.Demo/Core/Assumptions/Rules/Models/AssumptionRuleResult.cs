@@ -1,4 +1,4 @@
-﻿using AI.CAS.Core.Assumptions;
+﻿namespace AI.CAS.Core.Assumptions;
 
 /// <summary>
 /// Представляет внутренний результат работы одного правила знаний.

@@ -11,7 +11,7 @@ internal sealed class IntegerNumberRule : IAssumptionRule
     /// <summary>
     /// Уникальный идентификатор правила.
     /// </summary>
-    public override string RuleId => "integer.number.rule";
+    public string RuleId => "integer.number.rule";
 
 
     /// <summary>
@@ -23,7 +23,7 @@ internal sealed class IntegerNumberRule : IAssumptionRule
     /// <returns>
     /// Результат работы правила.
     /// </returns>
-    public override AssumptionRuleResult Evaluate(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null)
+    public AssumptionRuleResult Evaluate(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(assumptions);

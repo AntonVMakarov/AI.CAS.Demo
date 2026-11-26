@@ -83,14 +83,13 @@ public sealed record AssumptionAnswer
 
         foreach (string? ruleId in ruleIds)
         {
-            if (ruleId is null)
-            {
-                throw new ArgumentException(
-                    "Ответ предположений не должен содержать отсутствующее правило.",
-                    nameof(ruleIds));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(ruleId, nameof(ruleId));
 
-            copiedRuleIds.Add(ruleId);
+            // Одно и тоже правило не добавляем по нескольку раз:
+            if (!copiedRuleIds.Contains(ruleId))
+            {
+                copiedRuleIds.Add(ruleId);
+            }
         }
 
         return new ReadOnlyCollection<string>(copiedRuleIds);

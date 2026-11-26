@@ -5,12 +5,12 @@ namespace AI.CAS.Core.Assumptions;
 /// <summary>
 /// Интерфейс правил, отвечающих на вопросы движка предположений.
 /// </summary>
-internal abstract class IAssumptionRule
+internal interface IAssumptionRule
 {
     /// <summary>
     /// Уникальный идентификатор правила.
     /// </summary>
-    public abstract string RuleId { get; }
+    string RuleId { get; }
 
 
     /// <summary>
@@ -22,5 +22,5 @@ internal abstract class IAssumptionRule
     /// <returns>
     /// Результат работы правила.
     /// </returns>
-    public abstract AssumptionRuleResult Evaluate(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null);
+    AssumptionRuleResult Evaluate(AssumptionQuery query, AssumptionSet assumptions, IM4uCancellationToken? ct = null);
 }

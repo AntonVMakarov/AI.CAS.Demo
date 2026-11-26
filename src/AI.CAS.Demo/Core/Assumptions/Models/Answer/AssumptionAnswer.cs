@@ -6,7 +6,7 @@ namespace AI.CAS.Core.Assumptions;
 /// Представляет публичный объяснимый ответ механизма предположений.
 /// Ответ сохраняет старую трехзначную истинность и добавляет причину ответа. 
 /// </summary>
-public sealed record AssumptionAnswer
+public sealed class AssumptionAnswer
 {
     /// <summary>
     /// Публичная трехзначная истинность ответа.

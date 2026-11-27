@@ -46,11 +46,10 @@ internal sealed class AssumptionResultResolver
         {
             return AssumptionAnswer.Conflict(
                 results
-                    .Where(r => r.Kind == AssumptionRuleResultKind.Conflict)
+                    .Where(r => r.Kind == AssumptionRuleResultKind.Conflict || r.Kind == AssumptionRuleResultKind.Proved)
                     .Select(r => r.RuleId)
-                    .Distinct(StringComparer.Ordinal)
-                    .ToArray()
-                );
+                    //.Distinct(StringComparer.Ordinal)
+                    .ToArray());
         }
 
         if (hasTrue || hasFalse)
@@ -60,7 +59,7 @@ internal sealed class AssumptionResultResolver
                 results
                     .Where(r => r.Kind == AssumptionRuleResultKind.Proved)
                     .Select(r => r.RuleId)
-                    .Distinct(StringComparer.Ordinal)
+                    //.Distinct(StringComparer.Ordinal)
                     .ToArray()
                     );
         }
@@ -71,7 +70,7 @@ internal sealed class AssumptionResultResolver
                 results
                     .Where(r => r.Kind == AssumptionRuleResultKind.Inconclusive)
                     .Select(r => r.RuleId)
-                    .Distinct(StringComparer.Ordinal).ToArray()) : 
+                    /*.Distinct(StringComparer.Ordinal)*/.ToArray())  : 
             AssumptionAnswer.NoEvidence();
     }
 }
